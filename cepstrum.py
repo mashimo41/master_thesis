@@ -69,7 +69,7 @@ if __name__ == "__main__":
     plt.plot(np.arange(imB.shape[0]), imB_plot_gaussian)
 
     # Differentiate
-    imB = cv2.Laplacian(imB, cv2.CV_64F, 7)
+    # imB = cv2.Laplacian(imB, cv2.CV_64F, 7)
     # imB = cv2.GaussianBlur(imB, (9, 9), 0)
     # ret, imB = cv2.threshold(imB, 254.5, 20.0, cv2.THRESH_TOZERO)
     # ans1,ans2,ans2 = map(lambda x:x**2 if x>0 else 0,[a,b,c,d]) 
