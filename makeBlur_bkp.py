@@ -230,7 +230,7 @@ if __name__ == "__main__":
     '''
     
     #テスト用理想点光源画像(低周波成分なし)
-    psr = np.zeros((512,512),dtype=np.float)
+    psr = np.zeros(img.shape,dtype=np.float)
     psr[400:410,200] = 255
     psr[100,200] = 255
     psr[255,200] = 255
@@ -239,7 +239,7 @@ if __name__ == "__main__":
     # R = makeBlurCircleR(f=50e-3, D=10e-3, u=0.06, s=1.)
     # H = makeDefocusPSF(img.shape, img.dtype, R=0.1)  
     # 焦点ボケのHは分解能の問題でabsの0点が浮いてしまう．
-    H = makeBlurPSF(img.shape, img.dtype, L=0.05, th=np.pi*0.)
+    H = makeBlurPSF(img.shape, img.dtype, L=20, th=np.pi*0.)
 
     #ぶれ画像生成
     imB = mkBluredImg(img, H)
@@ -297,6 +297,6 @@ if __name__ == "__main__":
     cv2.waitKey(0)
 
     # cv2.imwrite("h2.jpg", (h / np.amax(h))*255)
-    # cv2.imwrite("spB2.jpg", (spB / np.amax(spB))*255)
-    # cv2.imwrite("cpB2.jpg", (cpB / np.amax(cpB))*255)
+    # cv2.imwrite("spB2.jpg", (spH / np.amax(spH))*255)
+    # cv2.imwrite("cpB2.jpg", (cpH+0.5 / np.amax(cpH+0.5))*255)
 
