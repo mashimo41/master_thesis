@@ -2,12 +2,14 @@
 import scipy.fftpack
 import scipy.signal
 import scipy.ndimage
+import scipy.optimize
 import numpy as np
 import cv2
 import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 import makeBlur_bkp as blur
+import findLocalmin as find
 
 '''
 @file    ****.py
@@ -15,6 +17,9 @@ import makeBlur_bkp as blur
 @date    2016-1-22
 @brief   make blured image from original image
 '''
+
+def f(x,a,b,c):
+    return a*x**2 + b*x + c
 
 if __name__ == "__main__":
 
@@ -43,7 +48,7 @@ if __name__ == "__main__":
     # imB = img[img.shape[0]/2-640:img.shape[0]/2+640, img.shape[1]/2-640:img.shape[1]/2+640] # for vertical blurred images
 
     #理論的には85X85以下だとぶれがでなくなる．
-    a = 500
+    a = 200
     # a = 150
     imB = img#[img.shape[0]/2-a:img.shape[0]/2+a, img.shape[1]/2-a:img.shape[1]/2+a]
     # imB = cv2.resize(imB, (400, 400), interpolation=cv2.INTER_CUBIC) #Bilinear interpolation 補間しなほうがぶれがよく出る
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     ######################################################################
 
     # LPF bad influence, shorten blur length & noise-rich
-    # imB = cv2.GaussianBlur(imB, (11, 11), 0)
+    imB = cv2.GaussianBlur(imB, (11, 11), 0)
     # plt.subplot(3, 1, 2)
     imB_plot_gaussian =imB[:, imB.shape[1]/2]
     plt.plot(np.arange(imB.shape[0]), imB_plot_gaussian)
@@ -112,20 +117,20 @@ if __name__ == "__main__":
     # print np.mean(spB[:50,:])
     # spT = np.where(mask>1, spB, 176)
 
-    cv2.namedWindow("blured image spectrum", cv2.WINDOW_NORMAL)
     cv2.namedWindow("blured image", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("blured image spectrum", cv2.WINDOW_NORMAL)
     cv2.namedWindow("blured image log spectrum", cv2.WINDOW_NORMAL)
     cv2.imshow("blured image", imB / np.amax(imB))
     cv2.imshow("blured image spectrum", mag/ np.amax(mag)+0.3)
     cv2.imshow("blured image log spectrum", spB/ np.amax(spB))
     # cv2.imshow("mask", mask)
 
-    s0 = (img / np.amax(img))*255
-    cv2.imwrite("img.jpg", s0)
-    s = (imB / np.amax(imB))*255
-    cv2.imwrite("imB.jpg", s)
-    s2 = (mag / np.amax(mag)+0.3)*255
-    cv2.imwrite("mag.jpg", s2)
+    # s0 = (img / np.amax(img))*255
+    # cv2.imwrite("img.jpg", s0)
+    # s = (imB / np.amax(imB))*255
+    # cv2.imwrite("imB.jpg", s)
+    # s2 = (mag / np.amax(mag)+0.3)*255
+    # cv2.imwrite("mag.jpg", s2)
     ######################################################################
     # ケプストラム計算・表示
     ######################################################################
@@ -179,11 +184,62 @@ if __name__ == "__main__":
     # LPF2
     log = scipy.ndimage.fourier_gaussian(log, 2.)
     log2 = scipy.fftpack.fftshift(log)
-    cv2.imshow("test2", log2/np.amax(log2))
+    # cv2.imshow("test2", log2/np.amax(log2))
 
     cpB = scipy.fftpack.ifft2(log)
     cpB = scipy.fftpack.fftshift(cpB) #fftshift ifftshift
     cpB = cpB.astype(np.float)
+
+    a = 25
+    cpB_roi = cpB[555-a:555+a,800-a:800+a]
+    minId = cpB_roi.argmin()
+    cv2.imshow("roi2", cpB_roi/ np.amax(cpB_roi)*30 +0.3)
+    print "This is ID:(v,h)"
+    # print (minId / cpB_roi.shape[0] + 1), (minId % cpB_roi.shape[0])
+    # for i in range (cpB.shape[0]):
+    #     for j in range (cpB.shape[1]):
+    #         if cpB[i, j]==np.amin(cpB_roi):
+    #             minId = (i, j)
+    # print minId
+    cpB_id = np.zeros(cpB.shape, dtype=int)
+    cv2.imshow("ro", cpB_id/ np.amax(cpB_id))
+    lmin = np.amin(cpB-np.amin(cpB_roi))
+    cpB_id = np.where((cpB-np.amin(cpB_roi))==lmin, 0., 1.)
+    cv2.imshow("roi", cpB_id/ np.amax(cpB_id))
+    print (cpB_id.argmin() / cpB.shape[0] + 1), (cpB_id.argmin() % cpB.shape[0])
+    print cpB_id.argmin()
+    print cpB_id
+    #まずｙ軸上で最小値を見つけて，その左右で最小値を探索する（最小値が斜め上だったら正確でないけど
+
+    r = 2
+    cpB_y = cpB[:,cpB.shape[1]/2]
+    lmin_y = cpB_y.argmin()
+    roi = cpB[lmin_y-r:lmin_y+r+1,cpB.shape[1]/2-r:cpB.shape[1]/2+r+1]
+    lmin_roi = roi.argmin()+1
+    minId_roi = (lmin_roi / (2*r+1) + 1), (lmin_roi % (2*r+1))
+    minId = ((minId_roi[0]-3)+lmin_y, (minId_roi[0]-3)+cpB.shape[1]/2)
+    print cpB[lmin_y, cpB.shape[1]/2]
+    print cpB_y.argmin()# 4, 3
+    print roi.argmin()
+    print roi
+    print minId_roi
+    print minId
+
+    id_x = np.arange(minId[1]-r, minId[1]+r+1, 1.)
+    id_y = np.arange(minId[0]-r, minId[0]+r+1, 1.)
+    roi_x = cpB[minId[0],minId[1]-r:minId[1]+r+1]
+    roi_y = cpB[minId[0]-r:minId[0]+r+1,minId[1]]
+    print id_x
+    print id_y
+    result_x, val_x= scipy.optimize.curve_fit(f, id_x, roi_x)
+    result_y, val_y= scipy.optimize.curve_fit(f, id_y, roi_y)
+    print result_x
+    print result_y
+    print -(result_y[1]/(2*result_y[0]))
+    print -result_y[1]**2/(4*result_y[0])+result_y[2]
+    print -(result_x[1]/(2*result_x[0]))
+    print -result_x[1]**2/(4*result_x[0])+result_x[2]
+    print find.LeastSquare(cpB, find.findMin(cpB))
 
     ###################################
     # ケプストラム表示
@@ -209,7 +265,7 @@ if __name__ == "__main__":
 
     # 1/3s 20 pixel, 1/2s 41 pixel, 1/10s 6 pixel
     plt.draw()
-    plt.pause(-1)
+    plt.pause(0.1)
 
     cp_min = np.abs(np.amin(cpB)) if np.amin(cpB) < 0 else 0.0
     cv2.namedWindow("blured image cepstrum", cv2.WINDOW_NORMAL)
@@ -220,26 +276,31 @@ if __name__ == "__main__":
     # cv2.imshow("blured image cepstrum2", (cpB / np.amax(cpB))*10000.+0.3)
     # cv2.imshow("blured image cepstrum2", (cpB / np.amax(cpB))*10000.+0.5) #B
     # cv2.imshow("blured image cepstrum2", (cpB / np.amax(cpB))*1000.+0.5) #C
-    cv2.imshow("blured image cepstrum2", (cpB / np.amax(cpB))*200+0.3) #simulate
+    cv2.imshow("blured image cepstrum2", (cpB / np.amax(cpB))*50+0.3) #simulate
     # cv2.imshow("blured image cepstrum2", cpB / np.amax(cpB))
     # cv2.imshow("blured image cepstrum2", (cpB / np.amax(cpB))*10000.+0.1) #垂直ブレ
     #ほとんど0の場合特徴が現れなくなる
     cv2.waitKey(0)
 
-    cpB2 = (cpB / np.amax(cpB))*1000.+0.5
+    cpB2 = (cpB / np.amax(cpB))*50.+0.3
     # cpB2 = (cpB + cp_min) / np.amax(cpB+cp_min)-0.6
     cv2.imwrite("imB.jpg", (imB/np.amax(imB))*255)
     cv2.imwrite("spB.jpg", (spB/np.amax(spB))*255)
     cv2.imwrite("cpB.jpg", (cpB2)*255)
     
 
+    a = 60
+    cpB = cpB[img.shape[0]/2-a:img.shape[0]/2+a, img.shape[1]/2-a:img.shape[1]/2+a]
+    a = 40
+    cpB[cpB.shape[0]/2-a:cpB.shape[0]/2+a, cpB.shape[1]/2-a:cpB.shape[1]/2+a] = 0.0
+
     #3D plot 重すぎ
     # fig = plt.figure()
     # ax = fig.add_subplot(111, projection='3d')
-    # u = np.arange(cpB_thres.shape[1])
-    # v = np.arange(cpB_thres.shape[0])
+    # u = np.arange(cpB.shape[1])
+    # v = np.arange(cpB.shape[0])
     # uu, vv = np.meshgrid(u, v)
-    # ax.scatter(uu, vv, cpB_thres, s=1)
+    # ax.scatter(uu, vv, cpB, s=1)
     # plt.show(-1)
 
     #極小値の閾値を変えたい
