@@ -7,6 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 import makeBlur_bkp as blur
+import findMin as find
 
 '''
 @file    ****.py
@@ -33,7 +34,7 @@ if __name__ == "__main__":
     # imB = blur.mkBluredImg(img, H)
     # <実画像実験の場合>
     a = 250
-    imB = img[img.shape[0]/2-a:img.shape[0]/2+a, img.shape[1]/2-a:img.shape[1]/2+a]
+    imB = img#[img.shape[0]/2-a:img.shape[0]/2+a, img.shape[1]/2-a:img.shape[1]/2+a]
 
     ######################################################################
     # 前処理
