@@ -9,7 +9,7 @@ import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 import makeBlur_bkp as blur
-import findLocalmin as find
+import findMin as find
 
 '''
 @file    ****.py
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     # LPF bad influence, shorten blur length & noise-rich
     imB = cv2.GaussianBlur(imB, (11, 11), 0)
-    # plt.subplot(3, 1, 2)
+    plt.subplot(3, 1, 2)
     imB_plot_gaussian =imB[:, imB.shape[1]/2]
     plt.plot(np.arange(imB.shape[0]), imB_plot_gaussian)
 
@@ -190,56 +190,11 @@ if __name__ == "__main__":
     cpB = scipy.fftpack.fftshift(cpB) #fftshift ifftshift
     cpB = cpB.astype(np.float)
 
-    a = 25
-    cpB_roi = cpB[555-a:555+a,800-a:800+a]
-    minId = cpB_roi.argmin()
-    cv2.imshow("roi2", cpB_roi/ np.amax(cpB_roi)*30 +0.3)
-    print "This is ID:(v,h)"
-    # print (minId / cpB_roi.shape[0] + 1), (minId % cpB_roi.shape[0])
-    # for i in range (cpB.shape[0]):
-    #     for j in range (cpB.shape[1]):
-    #         if cpB[i, j]==np.amin(cpB_roi):
-    #             minId = (i, j)
-    # print minId
-    cpB_id = np.zeros(cpB.shape, dtype=int)
-    cv2.imshow("ro", cpB_id/ np.amax(cpB_id))
-    lmin = np.amin(cpB-np.amin(cpB_roi))
-    cpB_id = np.where((cpB-np.amin(cpB_roi))==lmin, 0., 1.)
-    cv2.imshow("roi", cpB_id/ np.amax(cpB_id))
-    print (cpB_id.argmin() / cpB.shape[0] + 1), (cpB_id.argmin() % cpB.shape[0])
-    print cpB_id.argmin()
-    print cpB_id
-    #まずｙ軸上で最小値を見つけて，その左右で最小値を探索する（最小値が斜め上だったら正確でないけど
 
-    r = 2
-    cpB_y = cpB[:,cpB.shape[1]/2]
-    lmin_y = cpB_y.argmin()
-    roi = cpB[lmin_y-r:lmin_y+r+1,cpB.shape[1]/2-r:cpB.shape[1]/2+r+1]
-    lmin_roi = roi.argmin()+1
-    minId_roi = (lmin_roi / (2*r+1) + 1), (lmin_roi % (2*r+1))
-    minId = ((minId_roi[0]-3)+lmin_y, (minId_roi[0]-3)+cpB.shape[1]/2)
-    print cpB[lmin_y, cpB.shape[1]/2]
-    print cpB_y.argmin()# 4, 3
-    print roi.argmin()
-    print roi
-    print minId_roi
+    minId = find.findMin(cpB, roi_size=7, debug=True)
+    minId_sub =find.LeastSquare(cpB, minId)
     print minId
-
-    id_x = np.arange(minId[1]-r, minId[1]+r+1, 1.)
-    id_y = np.arange(minId[0]-r, minId[0]+r+1, 1.)
-    roi_x = cpB[minId[0],minId[1]-r:minId[1]+r+1]
-    roi_y = cpB[minId[0]-r:minId[0]+r+1,minId[1]]
-    print id_x
-    print id_y
-    result_x, val_x= scipy.optimize.curve_fit(f, id_x, roi_x)
-    result_y, val_y= scipy.optimize.curve_fit(f, id_y, roi_y)
-    print result_x
-    print result_y
-    print -(result_y[1]/(2*result_y[0]))
-    print -result_y[1]**2/(4*result_y[0])+result_y[2]
-    print -(result_x[1]/(2*result_x[0]))
-    print -result_x[1]**2/(4*result_x[0])+result_x[2]
-    print find.LeastSquare(cpB, find.findMin(cpB))
+    print minId_sub
 
     ###################################
     # ケプストラム表示
