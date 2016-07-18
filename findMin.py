@@ -5,10 +5,7 @@ import sys
 import scipy.optimize
 import matplotlib.pyplot as plt
 
-def f(x,a,b,c):
-    return a*x**2 + b*x + c
-
-def findMin(cpB, roi_size=5):
+def findMin(cpB, roi_size=5, debug=False):
     
     # Extract index of row's local minimum
     cpB_row = cpB[:, cpB.shape[1]/2]
@@ -17,7 +14,9 @@ def findMin(cpB, roi_size=5):
     # Set ROI  around local minimum by roi_size
     r = roi_size/2
     roi = cpB[minId_row-r:minId_row+r+1, cpB.shape[1]/2-r:cpB.shape[1]/2+r+1]
-    
+    if debug==True:
+        print 'ROI:', roi
+
     # Extract index of roi's local minimum
     minvId_roi = roi.argmin() + 1
     minId_roi = (minvId_roi / (2*r+1) + 1), (minvId_roi % (2*r+1))
@@ -30,7 +29,7 @@ def findMin(cpB, roi_size=5):
 def f(x,a,b,c):
     return a*x**2 + b*x + c
 
-def LeastSquare(cpB, minId, roi_size=5, flag=False):
+def LeastSquare(cpB, minId, roi_size=5, debug=False):
 
     # Range of Interest
     r = roi_size/2
@@ -54,9 +53,9 @@ def LeastSquare(cpB, minId, roi_size=5, flag=False):
     a_row =  -(para_row[1]/(2*para_row[0]))
     b_row =  -para_row[1]**2/(4*para_row[0])+para_row[2]
 
-    if flag==True:
-        print a_col, b_col
-        print a_row, b_row
+    if debug==True:
+        print 'cols (a,b):', a_col, b_col
+        print 'rows (a,b):', a_row, b_row
 
     return a_row, a_col
 
@@ -65,7 +64,7 @@ if __name__ == "__main__":
 
     cpB = cv2.imread(sys.argv[1], 0)
 
-    minId = findMin(cpB)
+    minId = findMin(cpB, debug=True)
     print minId
     a, b = LeastSquare(cpB, minId)
     
