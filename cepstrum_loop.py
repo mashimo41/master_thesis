@@ -5,7 +5,7 @@ import numpy as np
 import scipy.fftpack
 import scipy.signal
 import scipy.ndimage
-import makeBlur_bkp as blur
+import makeBlur as blur
 import findMin as find
 
 '''

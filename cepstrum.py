@@ -8,7 +8,7 @@ import cv2
 import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
-import makeBlur_bkp as blur
+import makeBlur as blur
 import findMin as find
 
 '''
