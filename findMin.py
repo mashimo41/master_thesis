@@ -57,7 +57,8 @@ def LeastSquare(cpB, minId, roi_size=5, debug=False):
         print 'cols (a,b):', a_col, b_col
         print 'rows (a,b):', a_row, b_row
 
-    return a_row, a_col
+    # Minimum coordinate:(a_row, a_col), Minimum value: mean(b_row, b_col)
+    return (a_row, a_col), (b_row + b_col) / 2
 
 
 if __name__ == "__main__":
@@ -66,6 +67,6 @@ if __name__ == "__main__":
 
     minId = findMin(cpB, debug=True)
     print minId
-    a, b = LeastSquare(cpB, minId)
+    (a, b), c = LeastSquare(cpB, minId)
     
-    print a, b
+    print a, b, c
